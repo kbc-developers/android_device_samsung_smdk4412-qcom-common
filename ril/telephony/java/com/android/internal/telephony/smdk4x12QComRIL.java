@@ -59,6 +59,8 @@ import com.android.internal.telephony.uicc.IccCardStatus;
  */
 public class smdk4x12QComRIL extends RIL implements CommandsInterface {
 
+    private boolean setPreferredNetworkTypeSeen = false;
+
     private AudioManager mAudioManager;
 
     private Object mSMSLock = new Object();
@@ -309,7 +311,10 @@ public class smdk4x12QComRIL extends RIL implements CommandsInterface {
             case RIL_UNSOL_RIL_CONNECTED:
                 ret = responseInts(p);
                 setRadioPower(false, null);
-                setPreferredNetworkType(mPreferredNetworkType, null);
+                if (!setPreferredNetworkTypeSeen) {
+                    Rlog.v(RILJ_LOG_TAG, "smdk4x12QComRIL: connected, setting network type to " + mPreferredNetworkType);
+                    setPreferredNetworkType(mPreferredNetworkType, null);
+                }
                 setCdmaSubscriptionSource(mCdmaSubscription, null);
                 if(mRilVersion >= 8)
                     setCellInfoListRate(Integer.MAX_VALUE, null);
@@ -665,5 +670,16 @@ public class smdk4x12QComRIL extends RIL implements CommandsInterface {
             AsyncResult.forMessage(response, ret, null);
             response.sendToTarget();
         }
+    }
+
+    @Override
+    public void setPreferredNetworkType(int networkType , Message response) {
+        riljLog("setPreferredNetworkType: " + networkType);
+
+        if (!setPreferredNetworkTypeSeen) {
+            setPreferredNetworkTypeSeen = true;
+        }
+
+        super.setPreferredNetworkType(networkType, response);
     }
 }
